@@ -152,8 +152,12 @@ const App: React.FC = () => {
     window.location.reload();
   };
 
+  const handleResetChat = () => {
+    setChatMessages([]);
+  };
+
   const handleClearHistory = () => {
-    if (window.confirm("Are you sure you want to clear the chat history?")) {
+    if (window.confirm("Are you sure you want to permanently clear the chat history?")) {
       setChatMessages([]);
       localStorage.removeItem(CHAT_HISTORY_KEY);
     }
@@ -184,6 +188,11 @@ const App: React.FC = () => {
   };
 
   const loadSheet = async (file: SheetFile) => {
+    // Reset chat if selecting a different file
+    if (selectedFile?.id !== file.id) {
+        setChatMessages([]);
+    }
+
     setSelectedFile(file);
     setLoadingData(true);
     try {
@@ -409,6 +418,7 @@ const App: React.FC = () => {
              toggleDarkMode={toggleDarkMode}
              onUpdateApiKey={handleUpdateApiKey}
              onSignOut={handleSignOut}
+             onResetChat={handleResetChat}
              onClearHistory={handleClearHistory}
            />
         </div>
