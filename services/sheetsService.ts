@@ -14,6 +14,25 @@ const SESSION_KEY = 'sheetmind_session';
 let tokenClient: any;
 let isGapiInitialized = false;
 
+// Helper to extract clean error messages from GAPI responses
+const getGapiError = (error: any): string => {
+  if (error?.result?.error?.message) {
+    return error.result.error.message;
+  }
+  if (error?.message) {
+    return error.message;
+  }
+  return typeof error === 'string' ? error : JSON.stringify(error);
+};
+
+// Helper to sanitize cell values
+const sanitizeValue = (val: any): string | number => {
+  if (val === null || val === undefined) return "";
+  if (typeof val === 'string' || typeof val === 'number') return val;
+  // Convert booleans or objects to string representation
+  return String(val);
+};
+
 // Session Management
 export const saveSession = (accessToken: string, expiresInSeconds: number) => {
   const expiryTime = Date.now() + (expiresInSeconds * 1000) - 60000; // Buffer 1 minute
@@ -149,8 +168,7 @@ export const listSpreadsheets = async (): Promise<SheetFile[]> => {
     return response.result.files || [];
   } catch (error: any) {
     console.error("Error listing files", error);
-    const msg = error?.result?.error?.message || error?.message || JSON.stringify(error);
-    throw new Error(msg);
+    throw new Error(getGapiError(error));
   }
 };
 
@@ -168,10 +186,20 @@ export const createSpreadsheet = async (title: string, headers?: string[], initi
     };
 
     // 2. If we have initial data (headers or rows), update the sheet immediately
-    if (headers || (initialRows && initialRows.length > 0)) {
-       const values = [];
-       if (headers) values.push(headers);
-       if (initialRows) values.push(...initialRows);
+    if ((headers && headers.length > 0) || (initialRows && initialRows.length > 0)) {
+       const values: any[][] = [];
+       
+       if (headers && headers.length > 0) {
+         values.push(headers.map(sanitizeValue));
+       }
+       
+       if (initialRows && initialRows.length > 0) {
+         initialRows.forEach(row => {
+            if (Array.isArray(row)) {
+              values.push(row.map(sanitizeValue));
+            }
+         });
+       }
        
        if (values.length > 0) {
            await window.gapi.client.sheets.spreadsheets.values.update({
@@ -186,7 +214,7 @@ export const createSpreadsheet = async (title: string, headers?: string[], initi
     return newFile;
   } catch (error) {
     console.error("Error creating spreadsheet", error);
-    throw error;
+    throw new Error(getGapiError(error));
   }
 };
 
@@ -199,15 +227,13 @@ export const getSheetData = async (spreadsheetId: string, range: string = 'Sheet
     return response.result;
   } catch (error) {
     console.error("Error fetching sheet data", error);
-    throw error;
+    throw new Error(getGapiError(error));
   }
 };
 
 export const appendRow = async (spreadsheetId: string, values: any[], range: string = 'Sheet1!A1'): Promise<any> => {
   try {
-    const sanitizedValues = values.map(v => 
-      (typeof v === 'string' || typeof v === 'number') ? v : JSON.stringify(v)
-    );
+    const sanitizedValues = values.map(sanitizeValue);
 
     const response = await window.gapi.client.sheets.spreadsheets.values.append({
       spreadsheetId,
@@ -220,25 +246,27 @@ export const appendRow = async (spreadsheetId: string, values: any[], range: str
     return response.result;
   } catch (error) {
     console.error("Error appending row", error);
-    throw error;
+    throw new Error(getGapiError(error));
   }
 };
 
 // NEW: Batch append for multiple rows
 export const appendMultipleRows = async (spreadsheetId: string, rows: any[][], range: string = 'Sheet1!A1'): Promise<any> => {
   try {
+    const sanitizedRows = rows.map(row => row.map(sanitizeValue));
+
     const response = await window.gapi.client.sheets.spreadsheets.values.append({
       spreadsheetId,
       range, 
       valueInputOption: 'USER_ENTERED',
       resource: {
-        values: rows,
+        values: sanitizedRows,
       },
     });
     return response.result;
   } catch (error) {
     console.error("Error appending multiple rows", error);
-    throw error;
+    throw new Error(getGapiError(error));
   }
 };
 
@@ -249,13 +277,13 @@ export const updateCell = async (spreadsheetId: string, range: string, value: st
       range,
       valueInputOption: 'USER_ENTERED',
       resource: {
-        values: [[value]],
+        values: [[sanitizeValue(value)]],
       },
     });
     return response.result;
   } catch (error) {
     console.error("Error updating cell", error);
-    throw error;
+    throw new Error(getGapiError(error));
   }
 };
 
@@ -283,7 +311,7 @@ export const deleteRow = async (spreadsheetId: string, sheetId: number, rowIndex
     return response.result;
   } catch (error) {
     console.error("Error deleting row", error);
-    throw error;
+    throw new Error(getGapiError(error));
   }
 };
 
@@ -295,6 +323,6 @@ export const getSheetMetadata = async (spreadsheetId: string): Promise<any> => {
     return response.result;
   } catch (error) {
     console.error("Error fetching metadata", error);
-    throw error;
+    throw new Error(getGapiError(error));
   }
 };
