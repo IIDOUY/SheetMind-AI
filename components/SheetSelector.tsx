@@ -11,6 +11,8 @@ interface SheetSelectorProps {
   loading: boolean;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
+  customTrigger?: React.ReactNode;
+  direction?: 'up' | 'down';
 }
 
 const SheetSelector: React.FC<SheetSelectorProps> = ({ 
@@ -21,25 +23,32 @@ const SheetSelector: React.FC<SheetSelectorProps> = ({
   onCreate, 
   loading,
   isOpen,
-  setIsOpen
+  setIsOpen,
+  customTrigger,
+  direction = 'down'
 }) => {
 
   return (
     <div className="relative flex-1 md:flex-none">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center space-x-2 text-gray-800 dark:text-gray-200 px-2 py-1.5 rounded-lg transition-colors w-full md:w-auto hover:bg-gray-100 dark:hover:bg-slate-800"
-      >
-        <span className="font-semibold text-base truncate max-w-[200px]">
-          {selectedFile ? selectedFile.name : 'Select Sheet'}
-        </span>
-        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
+      <div onClick={() => setIsOpen(!isOpen)}>
+        {customTrigger ? (
+          customTrigger
+        ) : (
+          <button
+            className="flex items-center justify-center space-x-2 text-gray-800 dark:text-gray-200 px-2 py-1.5 rounded-lg transition-colors w-full md:w-auto hover:bg-gray-100 dark:hover:bg-slate-800"
+          >
+            <span className="font-semibold text-base truncate max-w-[200px]">
+              {selectedFile ? selectedFile.name : 'Select Sheet'}
+            </span>
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          </button>
+        )}
+      </div>
 
       {isOpen && (
         <>
         <div className="fixed inset-0 z-40 bg-black/10 md:bg-transparent" onClick={() => setIsOpen(false)} />
-        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-0 w-[90vw] md:w-72 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-gray-100 dark:border-slate-700 z-50 animate-in fade-in zoom-in-95 duration-100 flex flex-col">
+        <div className={`absolute ${direction === 'up' ? 'bottom-full mb-2 origin-bottom-left' : 'top-full mt-2 origin-top-left'} left-0 w-[85vw] md:w-72 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-gray-100 dark:border-slate-700 z-50 animate-in fade-in zoom-in-95 duration-100 flex flex-col`}>
           <div className="p-3 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/50 rounded-t-xl">
             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Your Sheets</span>
             <button onClick={onRefresh} disabled={loading} className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full transition-colors">
