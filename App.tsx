@@ -20,9 +20,8 @@ import DataGrid from './components/DataGrid';
 import ChatInterface from './components/ChatInterface';
 import SheetSelector from './components/SheetSelector';
 import WelcomeScreen from './components/WelcomeScreen';
-import SettingsView from './components/SettingsView';
 import UserMenu from './components/UserMenu';
-import { LayoutGrid, Menu, Table, X, ArrowLeft } from 'lucide-react';
+import { LayoutGrid, Table, X } from 'lucide-react';
 import { GOOGLE_CLIENT_ID } from './constants';
 
 const CHAT_HISTORY_KEY = 'sheetmind_chat_history';
@@ -54,7 +53,6 @@ const App: React.FC = () => {
   // UI States for Mobile Overlays
   const [isSheetSelectorOpen, setIsSheetSelectorOpen] = useState(false);
   const [showMobileData, setShowMobileData] = useState(false);
-  const [showMobileSettings, setShowMobileSettings] = useState(false);
 
   // Dark Mode State
   const [darkMode, setDarkMode] = useState<boolean>(() => {
@@ -239,7 +237,7 @@ const App: React.FC = () => {
     const apiKey = localStorage.getItem('gemini_api_key');
     if (!apiKey) {
       alert("Gemini API Key is missing. Please update it in Settings.");
-      setShowMobileSettings(true);
+      // We no longer have ShowMobileSettings, so prompt via UserMenu if possible or just alert
       return;
     }
 
@@ -307,10 +305,27 @@ const App: React.FC = () => {
 
     } catch (error: any) {
       console.error("Error processing message", error);
+      
+      let displayError = error.message || 'Unknown error';
+      // Attempt to clean up JSON error messages from the API
+      if (typeof displayError === 'string' && displayError.includes('{"error":')) {
+        try {
+            // Find the start of the JSON object
+            const jsonStart = displayError.indexOf('{');
+            const jsonString = displayError.substring(jsonStart);
+            const parsed = JSON.parse(jsonString);
+            if (parsed.error && parsed.error.message) {
+                displayError = parsed.error.message;
+            }
+        } catch (e) {
+            // Parsing failed, keep original message
+        }
+      }
+
       const errorMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        text: `Error: ${error.message || 'Unknown error'}`,
+        text: `I encountered an issue: ${displayError}. Please try again.`,
         timestamp: new Date()
       };
       setChatMessages(prev => [...prev, errorMsg]);
@@ -329,18 +344,19 @@ const App: React.FC = () => {
   const showWelcome = !loadingFiles && files.length === 0;
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
+    <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-200 overflow-hidden">
       
       {/* Header */}
-      <header className="h-14 md:h-16 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between px-4 shadow-sm z-20 flex-shrink-0 relative">
+      <header className="h-14 md:h-16 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between px-3 md:px-4 shadow-sm z-20 flex-shrink-0 relative">
         
-        {/* Mobile Left: Settings Toggle */}
+        {/* Mobile Left: Data Toggle */}
         <div className="md:hidden">
-          <button 
-            onClick={() => setShowMobileSettings(true)}
-            className="p-2 -ml-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
+           <button 
+            onClick={() => setShowMobileData(true)}
+            disabled={!selectedFile}
+            className={`p-2 -ml-2 rounded-lg transition-colors ${selectedFile ? 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30' : 'text-gray-300 dark:text-slate-700'}`}
           >
-            <Menu className="w-6 h-6" />
+            <Table className="w-6 h-6" />
           </button>
         </div>
 
@@ -353,7 +369,7 @@ const App: React.FC = () => {
         </div>
         
         {/* Center: Sheet Selector */}
-        <div className="flex-1 flex justify-center">
+        <div className="flex-1 flex justify-center px-2">
              <SheetSelector 
                files={files} 
                selectedFile={selectedFile} 
@@ -366,26 +382,18 @@ const App: React.FC = () => {
              />
         </div>
 
-        {/* Desktop Right: Actions */}
-        <div className="hidden md:flex items-center space-x-2 justify-end md:w-1/3">
+        {/* Right Side: User Menu (Desktop & Mobile) */}
+        <div className="flex items-center justify-end md:w-1/3">
              <UserMenu 
                darkMode={darkMode}
                toggleDarkMode={toggleDarkMode}
                onUpdateApiKey={handleUpdateApiKey}
                onSignOut={handleSignOut}
+               onClearHistory={handleClearHistory}
+               align="right"
              />
         </div>
         
-        {/* Mobile Right: View Data Toggle */}
-        <div className="md:hidden">
-          <button 
-            onClick={() => setShowMobileData(true)}
-            disabled={!selectedFile}
-            className={`p-2 -mr-2 rounded-lg transition-colors ${selectedFile ? 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30' : 'text-gray-300 dark:text-slate-700'}`}
-          >
-            <Table className="w-6 h-6" />
-          </button>
-        </div>
       </header>
 
       {/* Main Content Area */}
@@ -437,30 +445,6 @@ const App: React.FC = () => {
              ) : (
                <DataGrid data={sheetData} loading={loadingData} />
              )}
-           </div>
-        </div>
-
-        {/* MOBILE OVERLAY: Settings View */}
-        <div className={`md:hidden fixed inset-0 z-40 bg-white dark:bg-slate-900 transition-transform duration-300 ease-in-out flex flex-col ${showMobileSettings ? 'translate-x-0' : '-translate-x-full'}`}>
-           <div className="h-14 flex items-center px-4 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-              <button 
-                onClick={() => setShowMobileSettings(false)}
-                className="p-2 -ml-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full mr-2"
-              >
-                <ArrowLeft className="w-6 h-6" />
-              </button>
-              <h2 className="font-semibold text-gray-800 dark:text-white">Settings</h2>
-           </div>
-           <div className="flex-1 overflow-y-auto">
-              <SettingsView 
-                onUpdateApiKey={() => {
-                  handleUpdateApiKey();
-                  setShowMobileSettings(false);
-                }} 
-                onSignOut={handleSignOut}
-                onClearHistory={handleClearHistory}
-                isMobile 
-              />
            </div>
         </div>
 
