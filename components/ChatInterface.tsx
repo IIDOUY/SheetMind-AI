@@ -1,7 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Send, User, Sparkles, Plus, BarChart3, TableProperties, FileSpreadsheet, ArrowRight, Mic, StopCircle } from 'lucide-react';
-import { ChatMessage } from '../types';
+import { Send, User, Sparkles, Plus, BarChart3, TableProperties, FileSpreadsheet, ArrowRight, Mic, StopCircle, Settings } from 'lucide-react';
+import { ChatMessage, SheetFile } from '../types';
 import Markdown from 'react-markdown';
+import SheetSelector from './SheetSelector';
+import UserMenu from './UserMenu';
 
 interface ChatInterfaceProps {
   messages: ChatMessage[];
@@ -13,6 +15,22 @@ interface ChatInterfaceProps {
   onSelectSheet: () => void;
   onCreateSheet: () => void;
   onViewData: () => void;
+  
+  // Props for SheetSelector
+  files: SheetFile[];
+  selectedFile: SheetFile | null;
+  onFileSelect: (file: SheetFile) => void;
+  onRefreshFiles: () => void;
+  filesLoading: boolean;
+  isSheetSelectorOpen: boolean;
+  setSheetSelectorOpen: (o: boolean) => void;
+
+  // Props for UserMenu (Settings)
+  darkMode: boolean;
+  toggleDarkMode: () => void;
+  onUpdateApiKey: () => void;
+  onSignOut: () => void;
+  onClearHistory: () => void;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
@@ -24,7 +42,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   hasSelectedFile,
   onSelectSheet,
   onCreateSheet,
-  onViewData
+  onViewData,
+  files,
+  selectedFile,
+  onFileSelect,
+  onRefreshFiles,
+  filesLoading,
+  isSheetSelectorOpen,
+  setSheetSelectorOpen,
+  darkMode,
+  toggleDarkMode,
+  onUpdateApiKey,
+  onSignOut,
+  onClearHistory
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -210,7 +240,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {/* Floating Input Area */}
       <div className="absolute bottom-0 left-0 right-0 p-4 md:pb-6 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent dark:from-slate-950 dark:via-slate-950 dark:to-transparent pointer-events-none transition-colors duration-200">
         <div className="max-w-3xl mx-auto pointer-events-auto">
-          <div className="relative bg-white dark:bg-slate-800 shadow-xl shadow-gray-200/50 dark:shadow-black/20 rounded-2xl border border-gray-200 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-900 focus-within:border-indigo-400 dark:focus-within:border-indigo-600 transition-all overflow-hidden">
+          <div className="relative bg-white dark:bg-slate-800 shadow-xl shadow-gray-200/50 dark:shadow-black/20 rounded-2xl border border-gray-200 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-900 focus-within:border-indigo-400 dark:focus-within:border-indigo-600 transition-all overflow-visible">
             
             <textarea
               ref={inputRef}
@@ -225,6 +255,51 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             
             <div className="flex items-center justify-between px-3 pb-3">
                <div className="flex items-center space-x-1">
+                  
+                  {/* Sheet Selector */}
+                  <SheetSelector 
+                     files={files}
+                     selectedFile={selectedFile}
+                     onSelect={onFileSelect}
+                     onRefresh={onRefreshFiles}
+                     onCreate={onCreateSheet}
+                     loading={filesLoading}
+                     isOpen={isSheetSelectorOpen}
+                     setIsOpen={setSheetSelectorOpen}
+                     direction="up"
+                     customTrigger={
+                       <button
+                         className={`p-2 rounded-lg transition-colors flex items-center justify-center ${
+                           selectedFile 
+                             ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40' 
+                             : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
+                         }`}
+                         title="Select Spreadsheet"
+                       >
+                         <FileSpreadsheet className="w-5 h-5" />
+                       </button>
+                     }
+                  />
+
+                  {/* Settings / User Menu */}
+                  <UserMenu 
+                    darkMode={darkMode}
+                    toggleDarkMode={toggleDarkMode}
+                    onUpdateApiKey={onUpdateApiKey}
+                    onSignOut={onSignOut}
+                    onClearHistory={onClearHistory}
+                    align="left"
+                    direction="up"
+                    customTrigger={
+                      <button
+                        className="p-2 rounded-lg transition-colors flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+                        title="Settings"
+                      >
+                        <Settings className="w-5 h-5" />
+                      </button>
+                    }
+                  />
+
                   <button
                     onClick={toggleListening}
                     disabled={!hasSelectedFile}
