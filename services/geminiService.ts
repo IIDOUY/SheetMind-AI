@@ -77,7 +77,6 @@ export const sendMessageToGemini = async (
   history: any[],
   apiKey: string
 ): Promise<any> => {
-  // Initialize Gemini Client with the provided API Key
   const ai = new GoogleGenAI({ apiKey: apiKey });
   
   // Construct context from sheet data
@@ -93,33 +92,63 @@ export const sendMessageToGemini = async (
     contextString += "No sheet data currently loaded.\n";
   }
 
-  // Use the flash preview model for speed
-  const modelName = 'gemini-3-flash-preview';
+  // Optimization: Limit history to last 10 turns
+  const recentHistory = history.slice(-10);
 
-  try {
-    // Optimization: Limit history to last 10 turns to maintain context without bloating input
-    const recentHistory = history.slice(-10);
+  // Retry Strategy: 
+  // 1. Try Flash (fastest)
+  // 2. Wait 2s and Try Flash again (handle spikes)
+  // 3. Fallback to Pro (more capacity/different quota)
+  const attempts = [
+    { model: 'gemini-3-flash-preview', delay: 0 },
+    { model: 'gemini-3-flash-preview', delay: 2000 },
+    { model: 'gemini-3-pro-preview', delay: 0 }
+  ];
 
-    const chat = ai.chats.create({
-      model: modelName,
-      history: [
-        ...recentHistory,
-        {
-          role: 'user',
-          parts: [{ text: contextString }] // Inject context fresh
-        }
-      ],
-      config: {
-        tools: tools,
-        // Optimization: Concise system instructions
-        systemInstruction: "You are a high-speed data assistant. Your goal is to execute user commands on Google Sheets immediately. \n1. If the user wants to edit data, CALL THE TOOL DIRECTLY. Do not ask for confirmation unless critical.\n2. Be extremely concise in text responses. \n3. Use Markdown.",
-      },
-    });
+  let lastError = null;
 
-    const result = await chat.sendMessage({ message: message });
-    return result; 
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    throw error;
+  for (const attempt of attempts) {
+    // Add delay for retries
+    if (attempt.delay > 0) {
+      await new Promise(resolve => setTimeout(resolve, attempt.delay));
+    }
+
+    try {
+      const chat = ai.chats.create({
+        model: attempt.model,
+        history: [
+          ...recentHistory,
+          {
+            role: 'user',
+            parts: [{ text: contextString }] 
+          }
+        ],
+        config: {
+          tools: tools,
+          // Optimization: Concise system instructions
+          systemInstruction: "You are a high-speed data assistant. Your goal is to execute user commands on Google Sheets immediately. \n1. If the user wants to edit data, CALL THE TOOL DIRECTLY. Do not ask for confirmation unless critical.\n2. Be extremely concise in text responses. \n3. Use Markdown.",
+        },
+      });
+
+      const result = await chat.sendMessage({ message: message });
+      return result;
+
+    } catch (error: any) {
+      // Check for Capacity (503) or Rate Limit (429) errors
+      const errorMessage = error.toString();
+      const isTransient = errorMessage.includes('503') || errorMessage.includes('429') || errorMessage.includes('High demand');
+
+      if (isTransient) {
+         console.warn(`Model ${attempt.model} failed with transient error. Retrying...`, error);
+         lastError = error;
+         continue; // Move to next attempt
+      }
+      
+      // If it's a hard error (e.g. invalid key), throw immediately
+      throw error;
+    }
   }
+
+  // If all attempts failed
+  throw lastError || new Error("Unable to connect to AI service after multiple attempts.");
 };
