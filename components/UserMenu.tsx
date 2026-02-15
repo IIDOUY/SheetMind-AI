@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Key, Moon, Sun, LogOut, ChevronDown, Check, Trash2, ShieldCheck, Settings } from 'lucide-react';
+import { User, Key, Moon, Sun, LogOut, ChevronDown, Check, Trash2, ShieldCheck, MessageSquarePlus } from 'lucide-react';
 
 interface UserMenuProps {
   darkMode: boolean;
   toggleDarkMode: () => void;
   onUpdateApiKey: () => void;
   onSignOut: () => void;
+  onResetChat: () => void;
   onClearHistory: () => void;
   align?: 'left' | 'right';
   customTrigger?: React.ReactNode;
@@ -17,6 +18,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
   toggleDarkMode, 
   onUpdateApiKey, 
   onSignOut,
+  onResetChat,
   onClearHistory,
   align = 'right',
   customTrigger,
@@ -68,6 +70,17 @@ const UserMenu: React.FC<UserMenuProps> = ({
           </div>
 
           <div className="p-2 space-y-1">
+            <button 
+              onClick={() => {
+                onResetChat();
+                setIsOpen(false);
+              }}
+              className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            >
+              <MessageSquarePlus className="w-4 h-4 text-indigo-500" />
+              <span>Reset Chat</span>
+            </button>
+
             <button 
               onClick={() => {
                 onUpdateApiKey();
