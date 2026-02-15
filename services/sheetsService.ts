@@ -154,15 +154,36 @@ export const listSpreadsheets = async (): Promise<SheetFile[]> => {
   }
 };
 
-export const createSpreadsheet = async (title: string): Promise<SheetFile> => {
+export const createSpreadsheet = async (title: string, headers?: string[], initialRows?: string[][]): Promise<SheetFile> => {
   try {
-    const response = await window.gapi.client.sheets.spreadsheets.create({
+    // 1. Create the sheet
+    const createResponse = await window.gapi.client.sheets.spreadsheets.create({
       properties: { title },
     });
-    return {
-      id: response.result.spreadsheetId,
-      name: response.result.properties.title,
+    
+    const spreadsheetId = createResponse.result.spreadsheetId;
+    const newFile = {
+      id: spreadsheetId,
+      name: createResponse.result.properties.title,
     };
+
+    // 2. If we have initial data (headers or rows), update the sheet immediately
+    if (headers || (initialRows && initialRows.length > 0)) {
+       const values = [];
+       if (headers) values.push(headers);
+       if (initialRows) values.push(...initialRows);
+       
+       if (values.length > 0) {
+           await window.gapi.client.sheets.spreadsheets.values.update({
+               spreadsheetId,
+               range: 'Sheet1!A1',
+               valueInputOption: 'USER_ENTERED',
+               resource: { values }
+           });
+       }
+    }
+
+    return newFile;
   } catch (error) {
     console.error("Error creating spreadsheet", error);
     throw error;
@@ -184,14 +205,13 @@ export const getSheetData = async (spreadsheetId: string, range: string = 'Sheet
 
 export const appendRow = async (spreadsheetId: string, values: any[], range: string = 'Sheet1!A1'): Promise<any> => {
   try {
-    // Ensure all values are strings or numbers
     const sanitizedValues = values.map(v => 
       (typeof v === 'string' || typeof v === 'number') ? v : JSON.stringify(v)
     );
 
     const response = await window.gapi.client.sheets.spreadsheets.values.append({
       spreadsheetId,
-      range, // Use the provided range (containing sheet name)
+      range, 
       valueInputOption: 'USER_ENTERED',
       resource: {
         values: [sanitizedValues],
@@ -200,6 +220,24 @@ export const appendRow = async (spreadsheetId: string, values: any[], range: str
     return response.result;
   } catch (error) {
     console.error("Error appending row", error);
+    throw error;
+  }
+};
+
+// NEW: Batch append for multiple rows
+export const appendMultipleRows = async (spreadsheetId: string, rows: any[][], range: string = 'Sheet1!A1'): Promise<any> => {
+  try {
+    const response = await window.gapi.client.sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range, 
+      valueInputOption: 'USER_ENTERED',
+      resource: {
+        values: rows,
+      },
+    });
+    return response.result;
+  } catch (error) {
+    console.error("Error appending multiple rows", error);
     throw error;
   }
 };
