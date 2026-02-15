@@ -1,0 +1,7 @@
+{
+  "name": "SheetMind AI",
+  "description": "An intelligent assistant powered by Gemini that manages your Google Sheets. Analyze, edit, and organize your data using natural language.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
