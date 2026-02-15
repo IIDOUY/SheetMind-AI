@@ -4,7 +4,7 @@ import { SheetData } from '../types';
 // Define Tools
 const addRowTool: FunctionDeclaration = {
   name: 'addRow',
-  description: 'Appends a new row of data to the spreadsheet. The values array should match the column order.',
+  description: 'Appends a single row of data to the spreadsheet. Good for adding one entry.',
   parameters: {
     type: Type.OBJECT,
     properties: {
@@ -15,6 +15,25 @@ const addRowTool: FunctionDeclaration = {
       },
     },
     required: ['values'],
+  },
+};
+
+const addMultipleRowsTool: FunctionDeclaration = {
+  name: 'addMultipleRows',
+  description: 'Appends multiple rows of data at once. Use this for populating tables, creating lists, or bulk updates.',
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      rows: {
+        type: Type.ARRAY,
+        description: 'A list of rows, where each row is an array of strings.',
+        items: { 
+          type: Type.ARRAY,
+          items: { type: Type.STRING }
+        },
+      },
+    },
+    required: ['rows'],
   },
 };
 
@@ -54,7 +73,7 @@ const deleteRowTool: FunctionDeclaration = {
 
 const createSheetTool: FunctionDeclaration = {
   name: 'createSheet',
-  description: 'Creates a new Google Spreadsheet with the given title.',
+  description: 'Creates a new Google Spreadsheet. Can optionally populate it with headers and initial data immediately.',
   parameters: {
     type: Type.OBJECT,
     properties: {
@@ -62,13 +81,26 @@ const createSheetTool: FunctionDeclaration = {
         type: Type.STRING,
         description: 'The title of the new spreadsheet.',
       },
+      headers: {
+        type: Type.ARRAY,
+        description: 'Optional: Array of strings for the first row (headers).',
+        items: { type: Type.STRING }
+      },
+      initialRows: {
+        type: Type.ARRAY,
+        description: 'Optional: Initial data rows to populate the sheet with immediately after creation.',
+        items: { 
+            type: Type.ARRAY,
+            items: { type: Type.STRING }
+        }
+      }
     },
     required: ['title'],
   },
 };
 
 const tools: Tool[] = [{
-  functionDeclarations: [addRowTool, updateCellTool, deleteRowTool, createSheetTool]
+  functionDeclarations: [addRowTool, addMultipleRowsTool, updateCellTool, deleteRowTool, createSheetTool]
 }];
 
 export const sendMessageToGemini = async (
@@ -95,10 +127,7 @@ export const sendMessageToGemini = async (
   // Optimization: Limit history to last 10 turns
   const recentHistory = history.slice(-10);
 
-  // Retry Strategy: 
-  // 1. Try Flash (fastest)
-  // 2. Wait 2s and Try Flash again (handle spikes)
-  // 3. Fallback to Pro (more capacity/different quota)
+  // Retry Strategy
   const attempts = [
     { model: 'gemini-3-flash-preview', delay: 0 },
     { model: 'gemini-3-flash-preview', delay: 2000 },
@@ -108,7 +137,6 @@ export const sendMessageToGemini = async (
   let lastError = null;
 
   for (const attempt of attempts) {
-    // Add delay for retries
     if (attempt.delay > 0) {
       await new Promise(resolve => setTimeout(resolve, attempt.delay));
     }
@@ -125,8 +153,14 @@ export const sendMessageToGemini = async (
         ],
         config: {
           tools: tools,
-          // Optimization: Concise system instructions
-          systemInstruction: "You are a high-speed data assistant. Your goal is to execute user commands on Google Sheets immediately. \n1. If the user wants to edit data, CALL THE TOOL DIRECTLY. Do not ask for confirmation unless critical.\n2. Be extremely concise in text responses. \n3. Use Markdown.",
+          // Updated Instructions: Explicitly guide the AI to use bulk tools for generation tasks
+          systemInstruction: `You are a high-performance Google Sheets assistant.
+Rules:
+1. When asked to "generate", "create a tracker", or "build a schedule", ALWAYS use 'createSheet' with the 'headers' and 'initialRows' parameters populated. Do NOT just create a blank sheet.
+2. If adding multiple rows of data to an existing sheet, use 'addMultipleRows' instead of calling 'addRow' many times.
+3. Be concise.
+4. Use Markdown.
+5. If the user mentions specific dates (e.g., Ramadan), calculate them or estimate them to the best of your ability and fill the rows.`,
         },
       });
 
@@ -134,21 +168,17 @@ export const sendMessageToGemini = async (
       return result;
 
     } catch (error: any) {
-      // Check for Capacity (503) or Rate Limit (429) errors
       const errorMessage = error.toString();
       const isTransient = errorMessage.includes('503') || errorMessage.includes('429') || errorMessage.includes('High demand');
 
       if (isTransient) {
          console.warn(`Model ${attempt.model} failed with transient error. Retrying...`, error);
          lastError = error;
-         continue; // Move to next attempt
+         continue; 
       }
-      
-      // If it's a hard error (e.g. invalid key), throw immediately
       throw error;
     }
   }
 
-  // If all attempts failed
   throw lastError || new Error("Unable to connect to AI service after multiple attempts.");
 };
