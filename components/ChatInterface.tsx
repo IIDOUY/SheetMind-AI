@@ -30,6 +30,7 @@ interface ChatInterfaceProps {
   toggleDarkMode: () => void;
   onUpdateApiKey: () => void;
   onSignOut: () => void;
+  onResetChat: () => void;
   onClearHistory: () => void;
 }
 
@@ -54,6 +55,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   toggleDarkMode,
   onUpdateApiKey,
   onSignOut,
+  onResetChat,
   onClearHistory
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -287,6 +289,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     toggleDarkMode={toggleDarkMode}
                     onUpdateApiKey={onUpdateApiKey}
                     onSignOut={onSignOut}
+                    onResetChat={onResetChat}
                     onClearHistory={onClearHistory}
                     align="left"
                     direction="up"
