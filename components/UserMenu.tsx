@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Key, Moon, Sun, LogOut, ChevronDown, Check, Trash2, ShieldCheck } from 'lucide-react';
+import { User, Key, Moon, Sun, LogOut, ChevronDown, Check, Trash2, ShieldCheck, Settings } from 'lucide-react';
 
 interface UserMenuProps {
   darkMode: boolean;
@@ -8,6 +8,8 @@ interface UserMenuProps {
   onSignOut: () => void;
   onClearHistory: () => void;
   align?: 'left' | 'right';
+  customTrigger?: React.ReactNode;
+  direction?: 'up' | 'down';
 }
 
 const UserMenu: React.FC<UserMenuProps> = ({ 
@@ -16,7 +18,9 @@ const UserMenu: React.FC<UserMenuProps> = ({
   onUpdateApiKey, 
   onSignOut,
   onClearHistory,
-  align = 'right'
+  align = 'right',
+  customTrigger,
+  direction = 'down'
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -34,20 +38,25 @@ const UserMenu: React.FC<UserMenuProps> = ({
 
   return (
     <div className="relative" ref={menuRef}>
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 p-1.5 md:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-      >
-        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-          <User className="w-5 h-5" />
-        </div>
-        <ChevronDown className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
+      <div onClick={() => setIsOpen(!isOpen)}>
+        {customTrigger ? (
+          customTrigger
+        ) : (
+          <button 
+            className="flex items-center space-x-2 p-1.5 md:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+              <User className="w-5 h-5" />
+            </div>
+            <ChevronDown className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+          </button>
+        )}
+      </div>
 
       {isOpen && (
         <>
         <div className="fixed inset-0 z-40 bg-black/5 md:hidden" onClick={() => setIsOpen(false)} />
-        <div className={`absolute top-full mt-2 w-64 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100 ${align === 'right' ? 'right-0 origin-top-right' : 'left-0 origin-top-left'}`}>
+        <div className={`absolute ${direction === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'} ${align === 'right' ? 'right-0 origin-bottom-right' : 'left-0 origin-bottom-left'} w-64 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100`}>
           
           <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Account</p>
