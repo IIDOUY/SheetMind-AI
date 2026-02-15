@@ -153,7 +153,6 @@ export const sendMessageToGemini = async (
         ],
         config: {
           tools: tools,
-          // Updated Instructions: Explicitly guide the AI to use bulk tools for generation tasks
           systemInstruction: `You are a high-performance Google Sheets assistant.
 Rules:
 1. When asked to "generate", "create a tracker", or "build a schedule", ALWAYS use 'createSheet' with the 'headers' and 'initialRows' parameters populated. Do NOT just create a blank sheet.
@@ -168,8 +167,8 @@ Rules:
       return result;
 
     } catch (error: any) {
-      const errorMessage = error.toString();
-      const isTransient = errorMessage.includes('503') || errorMessage.includes('429') || errorMessage.includes('High demand');
+      const errorMessage = error.message || JSON.stringify(error);
+      const isTransient = errorMessage.includes('503') || errorMessage.includes('429') || errorMessage.includes('High demand') || errorMessage.includes('overloaded');
 
       if (isTransient) {
          console.warn(`Model ${attempt.model} failed with transient error. Retrying...`, error);
