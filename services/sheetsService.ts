@@ -180,6 +180,10 @@ export const createSpreadsheet = async (title: string, headers?: string[], initi
     });
     
     const spreadsheetId = createResponse.result.spreadsheetId;
+    // CRITICAL FIX: Get the actual title of the first sheet (e.g., "Sheet1", "Hoja 1")
+    // If we assume "Sheet1" and the user's locale is different, the range will be invalid.
+    const firstSheetTitle = createResponse.result.sheets?.[0]?.properties?.title || 'Sheet1';
+    
     const newFile = {
       id: spreadsheetId,
       name: createResponse.result.properties.title,
@@ -202,9 +206,12 @@ export const createSpreadsheet = async (title: string, headers?: string[], initi
        }
        
        if (values.length > 0) {
+           // Use the dynamic sheet title with quotes to handle spaces safely
+           const range = `'${firstSheetTitle}'!A1`;
+           
            await window.gapi.client.sheets.spreadsheets.values.update({
                spreadsheetId,
-               range: 'Sheet1!A1',
+               range: range,
                valueInputOption: 'USER_ENTERED',
                resource: { values }
            });
