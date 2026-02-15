@@ -6,6 +6,7 @@ import {
   listSpreadsheets, 
   getSheetData,
   appendRow,
+  appendMultipleRows,
   updateCell,
   deleteRow,
   createSpreadsheet,
@@ -272,7 +273,13 @@ const App: React.FC = () => {
             await appendRow(selectedFile.id, args.values, `'${currentSheetName}'!A1`);
             if (!aiResponseText.includes('Added row')) aiResponseText += `\n*Added row to ${currentSheetName}*`;
             hasAction = true;
-          } else if (call.name === 'updateCell' && selectedFile) {
+          } 
+          else if (call.name === 'addMultipleRows' && selectedFile) {
+            await appendMultipleRows(selectedFile.id, args.rows, `'${currentSheetName}'!A1`);
+            if (!aiResponseText.includes('Added')) aiResponseText += `\n*Added ${args.rows.length} rows to ${currentSheetName}*`;
+            hasAction = true;
+          }
+          else if (call.name === 'updateCell' && selectedFile) {
             await updateCell(selectedFile.id, `'${currentSheetName}'!${args.cell}`, args.value);
             if (!aiResponseText.includes('Updated cell')) aiResponseText += `\n*Updated cell ${args.cell}*`;
             hasAction = true;
@@ -281,8 +288,9 @@ const App: React.FC = () => {
             if (!aiResponseText.includes('Deleted row')) aiResponseText += `\n*Deleted row ${args.rowIndex}*`;
             hasAction = true;
           } else if (call.name === 'createSheet') {
-            const newFile = await createSpreadsheet(args.title);
-            aiResponseText += `\n*Created ${args.title}*`;
+            // New logic: pass headers and initialRows if present
+            const newFile = await createSpreadsheet(args.title, args.headers, args.initialRows);
+            aiResponseText += `\n*Created ${args.title} with data*`;
             await fetchFiles();
             await loadSheet(newFile);
             hasAction = true;
