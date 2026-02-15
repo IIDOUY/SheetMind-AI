@@ -1,18 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Key, Moon, Sun, LogOut, ChevronDown, Check } from 'lucide-react';
+import { User, Key, Moon, Sun, LogOut, ChevronDown, Check, Trash2, ShieldCheck } from 'lucide-react';
 
 interface UserMenuProps {
   darkMode: boolean;
   toggleDarkMode: () => void;
   onUpdateApiKey: () => void;
   onSignOut: () => void;
+  onClearHistory: () => void;
+  align?: 'left' | 'right';
 }
 
 const UserMenu: React.FC<UserMenuProps> = ({ 
   darkMode, 
   toggleDarkMode, 
   onUpdateApiKey, 
-  onSignOut 
+  onSignOut,
+  onClearHistory,
+  align = 'right'
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -41,11 +45,17 @@ const UserMenu: React.FC<UserMenuProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
+        <>
+        <div className="fixed inset-0 z-40 bg-black/5 md:hidden" onClick={() => setIsOpen(false)} />
+        <div className={`absolute top-full mt-2 w-64 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100 ${align === 'right' ? 'right-0 origin-top-right' : 'left-0 origin-top-left'}`}>
           
           <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Account</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Account</p>
             <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">Google User</p>
+            <div className="flex items-center space-x-1 mt-1 text-xs text-green-600 dark:text-green-400">
+              <ShieldCheck className="w-3 h-3" />
+              <span>Connected to Sheets</span>
+            </div>
           </div>
 
           <div className="p-2 space-y-1">
@@ -63,7 +73,6 @@ const UserMenu: React.FC<UserMenuProps> = ({
             <button 
               onClick={() => {
                 toggleDarkMode();
-                // Don't close immediately so user can see toggle effect
               }}
               className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
@@ -72,6 +81,17 @@ const UserMenu: React.FC<UserMenuProps> = ({
                 <span>Dark Mode</span>
               </div>
               {darkMode && <Check className="w-3 h-3 text-indigo-500" />}
+            </button>
+            
+            <button 
+              onClick={() => {
+                onClearHistory();
+                setIsOpen(false);
+              }}
+              className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors group"
+            >
+              <Trash2 className="w-4 h-4 text-gray-400 group-hover:text-red-500 transition-colors" />
+              <span className="group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">Clear History</span>
             </button>
           </div>
 
@@ -89,6 +109,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
           </div>
 
         </div>
+        </>
       )}
     </div>
   );
