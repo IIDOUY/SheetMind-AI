@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   initializeGsi, 
@@ -360,7 +359,7 @@ const App: React.FC = () => {
   const showWelcome = !loadingFiles && files.length === 0;
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-200 overflow-hidden">
+    <div className="flex flex-col h-[100dvh] bg-slate-50 dark:bg-slate-900 transition-colors duration-200 overflow-hidden">
       
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col md:flex-row overflow-hidden relative bg-slate-50 dark:bg-slate-950">
