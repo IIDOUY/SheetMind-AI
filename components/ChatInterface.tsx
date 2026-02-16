@@ -181,11 +181,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       key={msg.id}
                       className={`group flex items-start space-x-4 ${msg.role === 'user' ? 'justify-end' : ''}`}
                   >
-                      {/* AI Icon (Left) */}
+                      {/* AI Icon Replacement (Brown Slide) */}
                       {msg.role !== 'user' && (
-                        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0 shadow-sm mt-1">
-                          <Sparkles className="w-5 h-5 text-white" />
-                        </div>
+                        <div className="w-1 h-6 bg-amber-800/80 rounded-full mt-2.5 flex-shrink-0 opacity-80" />
                       )}
 
                       {/* Message Content */}
@@ -195,14 +193,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                   {msg.text}
                                </div>
                           ) : (
-                               <div className="flex flex-col items-start space-y-3">
+                               <div className="flex flex-col items-start space-y-2">
                                   <div className="text-gray-800 dark:text-gray-200 text-[16px] leading-7 prose prose-slate dark:prose-invert max-w-none prose-p:leading-relaxed prose-headings:font-serif prose-headings:font-normal">
                                       <Markdown>{msg.text}</Markdown>
                                   </div>
                                   {msg.action === 'view_sheet' && (
                                       <button 
                                           onClick={onViewData}
-                                          className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 rounded-full text-sm font-medium transition-colors border border-gray-200 dark:border-slate-700 shadow-sm"
+                                          className="flex items-center space-x-2 px-0 py-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 text-sm font-medium transition-colors hover:underline"
                                       >
                                           <FileSpreadsheet className="w-4 h-4" />
                                           <span>View updated sheet</span>
@@ -223,9 +221,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
                   {isThinking && (
                     <div className="flex items-start space-x-4">
-                        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0 shadow-sm">
-                            <Sparkles className="w-5 h-5 text-white" />
-                        </div>
+                        <div className="w-1 h-6 bg-amber-800/80 rounded-full mt-2.5 flex-shrink-0 opacity-80" />
                         <div className="flex items-center space-x-1.5 py-3">
                             <span className="w-2 h-2 bg-gray-300 dark:bg-gray-600 rounded-full animate-pulse"></span>
                             <span className="w-2 h-2 bg-gray-300 dark:bg-gray-600 rounded-full animate-pulse delay-150"></span>
