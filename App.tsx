@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   initializeGsi, 
@@ -361,33 +362,6 @@ const App: React.FC = () => {
   return (
     <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-200 overflow-hidden">
       
-      {/* Header (Simplified) */}
-      <header className="h-14 md:h-16 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between px-3 md:px-4 shadow-sm z-20 flex-shrink-0 relative">
-        
-        {/* Mobile Left: Data Toggle */}
-        <div className="md:hidden">
-           <button 
-            onClick={() => setShowMobileData(true)}
-            disabled={!selectedFile}
-            className={`p-2 -ml-2 rounded-lg transition-colors ${selectedFile ? 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30' : 'text-gray-300 dark:text-slate-700'}`}
-          >
-            <Table className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Brand */}
-        <div className="flex items-center">
-           <div className="bg-indigo-600 p-1.5 rounded-lg mr-3 shadow-sm">
-            <LayoutGrid className="w-5 h-5 text-white" />
-          </div>
-          <h1 className="font-bold text-gray-800 dark:text-white text-lg tracking-tight">SheetMind AI</h1>
-        </div>
-
-        {/* Right Side Spacer (Controls moved to input box) */}
-        <div className="w-8"></div>
-        
-      </header>
-
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col md:flex-row overflow-hidden relative bg-slate-50 dark:bg-slate-950">
         
