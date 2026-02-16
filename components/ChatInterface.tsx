@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Send, User, Sparkles, Plus, BarChart3, TableProperties, FileSpreadsheet, ArrowRight, Mic, StopCircle, Settings } from 'lucide-react';
+import { Send, User, Sparkles, Plus, BarChart3, TableProperties, FileSpreadsheet, ArrowRight, Mic, StopCircle, Settings, Table } from 'lucide-react';
 import { ChatMessage, SheetFile } from '../types';
 import Markdown from 'react-markdown';
 import SheetSelector from './SheetSelector';
@@ -302,6 +302,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       </button>
                     }
                   />
+
+                  {/* View Data (Mobile Only) */}
+                  <button
+                    onClick={onViewData}
+                    disabled={!hasSelectedFile}
+                    className={`p-2 rounded-lg transition-colors flex items-center justify-center md:hidden ${
+                      hasSelectedFile 
+                        ? 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700' 
+                        : 'text-gray-300 dark:text-slate-700'
+                    }`}
+                    title="View Spreadsheet"
+                  >
+                    <Table className="w-5 h-5" />
+                  </button>
 
                   <button
                     onClick={toggleListening}
