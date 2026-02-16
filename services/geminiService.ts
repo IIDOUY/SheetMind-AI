@@ -113,7 +113,9 @@ export const sendMessageToGemini = async (
   
   // Construct context from sheet data
   let contextString = "Current Spreadsheet Context:\n";
-  if (sheetData && sheetData.values) {
+  let hasData = false;
+  if (sheetData && sheetData.values && sheetData.values.length > 0) {
+    hasData = true;
     // Optimization: Limit to 25 rows to speed up processing and reduce token usage
     const headers = sheetData.values[0] || [];
     const rows = sheetData.values.slice(0, 25); 
@@ -121,7 +123,7 @@ export const sendMessageToGemini = async (
     contextString += `Headers: ${JSON.stringify(headers)}\n`;
     contextString += `Data (First ${rows.length} rows): ${JSON.stringify(rows)}\n`;
   } else {
-    contextString += "No sheet data currently loaded.\n";
+    contextString += "No sheet data currently loaded. You are in 'No File Selected' mode.\n";
   }
 
   // Optimization: Limit history to last 10 turns
@@ -135,6 +137,27 @@ export const sendMessageToGemini = async (
   ];
 
   let lastError = null;
+
+  // Dynamic system instruction based on state
+  const baseInstruction = `You are a high-performance Google Sheets assistant.`;
+  
+  const contextInstruction = hasData 
+    ? `CONTEXT: The user has a spreadsheet OPEN.
+       - Your PRIMARY job is to modify THIS spreadsheet using 'addRow', 'addMultipleRows', 'updateCell', or 'deleteRow'.
+       - Do NOT create a new spreadsheet unless the user explicitly asks for a "NEW" file, or "create a NEW spreadsheet".
+       - If the user asks to "update", "add", "change", "create a schedule" (implied in this sheet), or "generate rows", use the modification tools on the CURRENT sheet.`
+    : `CONTEXT: The user has NO spreadsheet open.
+       - If the user asks to generate data or create a tracker, you MUST use 'createSheet'.`;
+
+  const commonRules = `
+Rules:
+1. If adding multiple rows of data, ALWAYS use 'addMultipleRows' instead of calling 'addRow' many times.
+2. Be concise in your text response.
+3. Use Markdown.
+4. If the user mentions specific dates (e.g., Ramadan, next Friday), calculate them accurately and fill the rows.
+5. If the user input implies adding data to the current context, map the values to the existing Headers provided in the context.`;
+
+  const systemInstruction = `${baseInstruction}\n${contextInstruction}\n${commonRules}`;
 
   for (const attempt of attempts) {
     if (attempt.delay > 0) {
@@ -153,13 +176,7 @@ export const sendMessageToGemini = async (
         ],
         config: {
           tools: tools,
-          systemInstruction: `You are a high-performance Google Sheets assistant.
-Rules:
-1. When asked to "generate", "create a tracker", or "build a schedule", ALWAYS use 'createSheet' with the 'headers' and 'initialRows' parameters populated. Do NOT just create a blank sheet.
-2. If adding multiple rows of data to an existing sheet, use 'addMultipleRows' instead of calling 'addRow' many times.
-3. Be concise.
-4. Use Markdown.
-5. If the user mentions specific dates (e.g., Ramadan), calculate them or estimate them to the best of your ability and fill the rows.`,
+          systemInstruction: systemInstruction,
         },
       });
 
