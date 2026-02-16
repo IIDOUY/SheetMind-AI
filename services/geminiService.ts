@@ -138,8 +138,15 @@ export const sendMessageToGemini = async (
 
   let lastError = null;
 
+  // Calculate current date/time for context
+  const now = new Date();
+  const dateString = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
   // Dynamic system instruction based on state
-  const baseInstruction = `You are a high-performance Google Sheets assistant.`;
+  const baseInstruction = `You are a high-performance Google Sheets assistant.
+Current Date: ${dateString}
+Current Time: ${timeString}`;
   
   const contextInstruction = hasData 
     ? `CONTEXT: The user has a spreadsheet OPEN.
@@ -154,7 +161,7 @@ Rules:
 1. If adding multiple rows of data, ALWAYS use 'addMultipleRows' instead of calling 'addRow' many times.
 2. Be concise in your text response.
 3. Use Markdown.
-4. If the user mentions specific dates (e.g., Ramadan, next Friday), calculate them accurately and fill the rows.
+4. If the user mentions specific dates (e.g., "today", "tomorrow", "next Friday"), calculate them accurately relative to the Current Date provided above.
 5. If the user input implies adding data to the current context, map the values to the existing Headers provided in the context.`;
 
   const systemInstruction = `${baseInstruction}\n${contextInstruction}\n${commonRules}`;
